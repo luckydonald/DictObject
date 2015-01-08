@@ -1,4 +1,4 @@
-__author__ = 'tasso'
+__author__ = 'luckydonald'
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys

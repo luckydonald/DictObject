@@ -53,7 +53,7 @@ class DictObject(dict):
 			>>> c == {"one": 1, "two": 2, "three": 3, "eins": 1, "zwei": 2, "drei": 3}
 			True
 
-		This works with everything subclassing 'dict', so you can use to_objects too.
+		This works with everything subclassing 'dict', so you can use DictObject too.
 		You also can combine everything above.
 
 
@@ -281,13 +281,17 @@ class DictObject(dict):
 							# else, if is free, set to 0 to exit loop
 			#end while
 			print("\nCRITICAL WARNING in DictObject: Mapped key '%s' to attribute '%s', because attribute '%s' was already set by key '%s'." % (key, unique_attribute_name, attribute_name, self._attribute_to_key_map[attribute_name]))
+		value = self.on_set(key,value)
 		self._add_to_object_part(key, value)
 		self._attribute_to_key_map[unique_attribute_name] = key
+		self.after_set(key,value)
 
 	def __delitem__(self, key):
-		attribute_name = self.get_attribute_name_by_key(key)
-		del self._attribute_to_key_map[attribute_name]
-		dict.__delitem__(self, key)
+		if self.on_del(key):
+			attribute_name = self.get_attribute_name_by_key(key)
+			del self._attribute_to_key_map[attribute_name]
+			dict.__delitem__(self, key)
+			self.after_del(key)
 
 	# Attributes (Object)
 
@@ -299,11 +303,12 @@ class DictObject(dict):
 		else:
 			key_name = self._attribute_to_key_map[name] if name in self._attribute_to_key_map else name  	# if there is a key representing this attribute
 																			# update this key, too
-
+		value = self.on_set(name, value)
 		self._add_to_object_part(name, value)  	# needed allways to keep items  beeing recursive.
 		self._attribute_to_key_map[name] = key_name 	# needed only on adding new element. (not when updating)
 		# object.__setattr__(self, key, value)
 		dict.__setitem__(self,self._attribute_to_key_map[name], value)  # self[self._key_map[key]] = value
+		self.after_set(name, value)
 
 	def __getattr__(self, name):
 		"""
@@ -318,17 +323,23 @@ class DictObject(dict):
 			try:
 				if self._attribute_to_key_map:
 					key_name = self._attribute_to_key_map[name]  # Check if we have this set.
-					return dict.__getitem__(self, key_name)  # self[key_name]
+					self.on_get(key_name)
+					value = dict.__getitem__(self, key_name)  # self[key_name]
+					value = self.after_get(key_name, value)
+					return value
 				else:
-					print("_attribute_to_key_map not dofined.")
+					print("_attribute_to_key_map not defined.")
 
 			except KeyError:
 				raise AttributeError(name)
 
 	def __delattr__(self, name):
 		# object.__delattr__(self, item)
-		dict.__delitem__(self, self._attribute_to_key_map[name])
-		del self._attribute_to_key_map[name]
+		key = self._attribute_to_key_map[name]
+		if self.on_del(key):
+			dict.__delitem__(self, key)
+			del self._attribute_to_key_map[name]
+			self.after_del(key)
 
 	def __contains__(self, k):
 		"""
@@ -357,6 +368,77 @@ class DictObject(dict):
 		except:
 			return False
 
+	def on_get(self, key):
+		"""
+		Override this to do modify data, on an easy way,
+		without the need to fiddle with all the getter
+		and setter methods yourself.
+
+		This will be called with the key.  (from the dict, not the attribute)
+		To get or modify the value, use after_get
+
+		"""
+		pass
+
+	def on_set(self, key, value_to_set):
+		"""
+		Same idea as on_get()
+		Override to get control about the content written.
+		This function will be called before the content (value) reaches the dict,
+		so you can modify it here.
+		The value this function returns will be stored in the dict.
+		"""
+		return value_to_set
+
+	def on_del(self, key):
+		"""
+		You got the idea. almost identical to on_get and on_set
+		Just no value is given.
+		This function allows you to prevent a entry from beeing deleted.
+		If you don't return True, the value will not be deleted!
+
+		YOU MUST RETURN TRUE TO DELETE!
+		"""
+		return True
+
+	def after_get(self, key, value):
+		"""
+		This is to get or modify the value, use after_get
+
+		Same as on_get, but is after retrieving the data get,
+		so we now have a value too.
+
+		What you will returned will be returned to the call.
+
+		Example:
+		Our object is called ``foo_object``.
+		When requesting
+		>> foo_object.bar
+		this function will be called.
+		If we return ``None`` here, it will result in
+		>> foo_object.bar == None
+		same goes for
+		>> foo_object["bar"] == None
+
+		"""
+
+		return value
+
+
+	def after_set(self, key, value):
+		"""
+		Same as on_set, but the value is already stored,
+		and there is no need for returning anything
+		"""
+		pass
+
+	def after_del(self, key):
+		"""
+		Same as on_del, but the key is already deleted.
+		Please note, this function is not called, if on_del() returned a False
+		and so aborted deletion.
+		"""
+		pass
 
 def ______():
 	"""
