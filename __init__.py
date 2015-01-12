@@ -3,7 +3,9 @@ import re
 
 unallowed_in_variable_name = re.compile('[\W]+')
 
-class DictObject(dict):
+class MyDict(dict):
+    	pass
+class DictObject(MyDict):
 	"""
 	DictObject is a subclass of dict with attribute-style access.
 
@@ -296,7 +298,7 @@ class DictObject(dict):
 	# Attributes (Object)
 
 	def __setattr__(self, name, value):
-		if name == "_attribute_to_key_map":
+		if name.startswith("_"):
 			#self._attribute_to_key_map = value
 			super(DictObject, self).__setattr__(name, value)
 			return
@@ -318,9 +320,12 @@ class DictObject(dict):
 		:return:
 		"""
 		try:
-			return dict.__getattribute__(self, name)  # Raise exception if not found in original dict's attributes either
+			value = dict.__getattribute__(self, name)  # Raise exception if not found in original dict's attributes either
+			return value
 		except AttributeError:
 			try:
+				if name in self.__dict__:
+					return self.__dict__[name]
 				if self._attribute_to_key_map:
 					key_name = self._attribute_to_key_map[name]  # Check if we have this set.
 					self.on_get(key_name)
@@ -328,17 +333,35 @@ class DictObject(dict):
 					value = self.after_get(key_name, value)
 					return value
 				else:
-					print("_attribute_to_key_map not defined.")
+					# print("_attribute_to_key_map not defined.")
+					if True: # TODO: python2/3
+				 		raise AttributeError(name) from None
+					raise AttributeError(name)
 
 			except KeyError:
 				raise AttributeError(name)
 
 	def __delattr__(self, name):
+		"""
+		>>> b = DictObject({"foo": {"lol": True}, "hello":42, "ponies":'are pretty!'})
+		>>> b._lol = "hey"
+		>>> b._lol
+		'hey'
+		>>> b['_lol']
+		Traceback (most recent call last):
+			...
+		KeyError: '_lol'
+
+		>>> del b._lol
+		"""
 		# object.__delattr__(self, item)
-		key = self._attribute_to_key_map[name]
-		if self.on_del(key):
-			dict.__delitem__(self, key)
-			del self._attribute_to_key_map[name]
+		if name in self.__dict__:
+			del self.__dict__[name]
+		if name in self._attribute_to_key_map:
+			key = self._attribute_to_key_map[name]
+			if self.on_del(key):
+				dict.__delitem__(self, key)
+				del self._attribute_to_key_map[name]
 			self.after_del(key)
 
 	def __contains__(self, k):
