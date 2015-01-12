@@ -316,9 +316,14 @@ class DictObject(MyDict):
 		"""
 		Directly pulls the content form the dict itself,
 		works as long as _key_map is correct.
-		:param name:
-		:return:
+
+		>>> b = DictObject({"foo": {"lol": True}, "hello":42, "ponies":'are pretty!'})
+		>>> b.notexist
+		Traceback (most recent call last):
+			...
+		AttributeError: notexist
 		"""
+		_exception = None #py2
 		try:
 			value = dict.__getattribute__(self, name)  # Raise exception if not found in original dict's attributes either
 			return value
@@ -333,13 +338,27 @@ class DictObject(MyDict):
 					value = self.after_get(key_name, value)
 					return value
 				else:
+					try:
+						raise AttributeError(name) from None
+					except SyntaxError:
+						pass
 					# print("_attribute_to_key_map not defined.")
-					if True: # TODO: python2/3
-				 		raise AttributeError(name) from None
-					raise AttributeError(name)
+					_exception = AttributeError(name)
+					_exception.__cause__ = None
 
 			except KeyError:
-				raise AttributeError(name)
+				try:
+					raise AttributeError(name) from None
+				except SyntaxError:
+					pass
+				_exception = AttributeError(name)
+				_exception.__cause__ = None
+			finally:
+				if _exception:
+					raise _exception
+		finally:
+			if _exception:
+				raise _exception
 
 	def __delattr__(self, name):
 		"""
