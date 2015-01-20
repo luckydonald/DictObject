@@ -1,10 +1,34 @@
 __author__ = 'luckydonald'
 import re
+from collections.abc import MutableSequence
 
 unallowed_in_variable_name = re.compile('[\W]+')
 
 class MyDict(dict):
     	pass
+class DictObjectList(list,MutableSequence):
+
+	def insert(self, index, value):
+		obj_value = DictObject.objectify(value)
+		return super().insert(index, obj_value)
+
+	def __iadd__(self, values):
+		obj_values = DictObject.objectify(values)
+		return super().__iadd__(obj_values)
+
+	def extend(self, values):
+		obj_value = DictObject.objectify(values)
+		super().extend(obj_value)
+
+	def append(self, value):
+		obj_value = DictObject.objectify(value)
+		super().append(obj_value)
+
+	def __setitem__(self, index, value):
+		obj_value = DictObject.objectify(value)
+		return super().__setitem__(index, obj_value)
+
+
 class DictObject(MyDict):
 	"""
 	DictObject is a subclass of dict with attribute-style access.
@@ -81,6 +105,44 @@ class DictObject(MyDict):
 		See below (in the merge_dict function)
 		how to merge another dict into a DictObject.
 
+		In order to support dicts added to lists becomeing DictObjects, list type will become the list subclass DictObjectList.
+		It will behave like normal lists, but added values will be objectified.
+
+			Some tests, not ideal as example
+
+			>>> e.test = []
+			>>> e.test.append({"hey":"wow"})
+			>>> e.test
+			[{'hey': 'wow'}]
+			>>> type( e.test )
+			<class 'DictObject.DictObjectList'>
+			>>> e.test[0]
+			{'hey': 'wow'}
+			>>> e.test[0]["hey"]
+			'wow'
+			>>> type( e.test[0] )
+			<class 'DictObject.DictObject'>
+			>>> e.test[0].hey
+			'wow'
+			>>> e.test.append({"huh":"wow"})
+			>>> e.test == [{'hey': 'wow'}, {'huh': 'wow'}]
+			True
+			>>> e.test += [{'third': 'wow'}]
+			>>> e.test[2]
+			{'third': 'wow'}
+			>>> type(e.test[2])
+			<class 'DictObject.DictObject'>
+			>>> e.test.extend([{'fourth': 'wow'}])
+			>>> e.test == [{'hey': 'wow'}, {'huh': 'wow'}, {'third': 'wow'}, {'fourth': 'wow'}]
+			True
+			>>> type(e.test[3])
+			<class 'DictObject.DictObject'>
+			>>> f = DictObject.objectify(["a",])
+			>>> f
+			['a']
+			>>> type(f)
+			<class 'DictObject.DictObjectList'>
+
 	"""
 	_attribute_to_key_map = None  # to resolve the attributes.
 	# key is the attribute name,
@@ -98,6 +160,19 @@ class DictObject(MyDict):
 		for arg in args:
 			self.merge_dict(arg)
 		self.merge_dict(kwargs_dict)
+
+	@classmethod
+	def objectify(cls,obj):
+		if isinstance(obj, DictObject):
+			return obj
+		if isinstance(obj, list):  # add all list elements
+			return DictObjectList(DictObject.objectify(x) for x in obj)
+		elif isinstance(obj, (list, tuple)):  # add all list elements
+			return type(obj)(DictObject.objectify(x) for x in obj) # type(obj)( ... for ... in ..)   is same as   [( ... for ... in ..)]
+		elif isinstance(obj, dict):  # add dict recursivly
+			return DictObject(obj)
+		else:  # add single element
+			return obj
 
 	def merge_dict(self, d):
 		"""
@@ -226,12 +301,18 @@ class DictObject(MyDict):
 		return attribute_name
 
 	def _add_to_object_part(self, name, obj):
+		dict.__setitem__(self, name, DictObject.objectify(obj))
+		return
 		if isinstance(obj, (list, tuple)):  # add all list elements
-			dict.__setitem__(self, name, type(obj)(DictObject(x) if isinstance(x, (dict, list, tuple)) else x for x in obj)) # type(obj)( ... for ... in ..)   is same as   [( ... for ... in ..)]
+			dict.__setitem__(self, name, DictObjectList(obj)) # type(obj)( ... for ... in ..)   is same as   [( ... for ... in ..)]
+		elif isinstance(obj, (list, tuple)):  # add all list elements
+			dict.__setitem__(self, name, type(obj)(DictObject(x) if isinstance(x, (list, tuple)) else x for x in obj)) # type(obj)( ... for ... in ..)   is same as   [( ... for ... in ..)]
 		elif isinstance(obj, dict):  # add dict recursivly
 			dict.__setitem__(self, name, DictObject(obj))
 		else:  # add single element
 			dict.__setitem__(self, name, obj)
+
+
 
 	# Items (Array/Dict)
 
@@ -309,7 +390,7 @@ class DictObject(MyDict):
 		self._add_to_object_part(name, value)  	# needed allways to keep items  beeing recursive.
 		self._attribute_to_key_map[name] = key_name 	# needed only on adding new element. (not when updating)
 		# object.__setattr__(self, key, value)
-		dict.__setitem__(self,self._attribute_to_key_map[name], value)  # self[self._key_map[key]] = value
+		dict.__setitem__(self,self._attribute_to_key_map[name], DictObject.objectify(value))  # self[self._key_map[key]] = value
 		self.after_set(name, value)
 
 	def __getattr__(self, name):
@@ -561,5 +642,11 @@ def ______():
 		>>> m
 		{}
 
+		>>> m.hua = [{"hey":"heeey!"}]
+		>>> m.hua[0].hey
+		'heeey!'
+
 	"""
 	pass
+
+pass
