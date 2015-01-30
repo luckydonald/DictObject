@@ -1,8 +1,16 @@
 __author__ = 'luckydonald'
 import re
-from collections.abc import MutableSequence
+import sys
+try:
+	from collections.abc import MutableSequence #python 3
+except ImportError:
+	from collections import MutableSequence #py2
 
 unallowed_in_variable_name = re.compile('[\W]+')
+
+def suppress_context(exc):
+	exc.__context__ = None
+	return exc
 
 class MyDict(dict):
     	pass
@@ -419,19 +427,15 @@ class DictObject(MyDict):
 					value = self.after_get(key_name, value)
 					return value
 				else:
-					try:
-						raise AttributeError(name) from None
-					except SyntaxError:
-						pass
+					if not sys.version < '3': # python 2.7
+						raise suppress_context(AttributeError(name))
 					# print("_attribute_to_key_map not defined.")
 					_exception = AttributeError(name)
 					_exception.__cause__ = None
 
 			except KeyError:
-				try:
-					raise AttributeError(name) from None
-				except SyntaxError:
-					pass
+				if not sys.version < '3': # python 2.7
+					raise suppress_context(AttributeError(name))
 				_exception = AttributeError(name)
 				_exception.__cause__ = None
 			finally:
