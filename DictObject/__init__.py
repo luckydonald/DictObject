@@ -5,8 +5,8 @@ try:
 	from collections.abc import MutableSequence #python 3
 except ImportError:
 	from collections import MutableSequence #py2
-import encoding
-from encoding import to_native as n
+from DictObject import encoding
+from DictObject.encoding import to_native as n
 
 unallowed_in_variable_name = re.compile('[\W]+')
 
@@ -653,7 +653,7 @@ def ______():
 		'heeey!'
 
 		Python 2 with unicode:
-		>>> from encoding import to_unicode as u
+		>>> from DictObject.encoding import to_unicode as u
 		>>> h = DictObject(ponies=u('are pretty!'))
 		>>> h.ponies == u('are pretty!')
 		True
