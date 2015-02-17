@@ -1,32 +1,42 @@
 __author__ = 'luckydonald'
 import re
-from collections.abc import MutableSequence
+import sys
+try:
+	from collections.abc import MutableSequence #python 3
+except ImportError:
+	from collections import MutableSequence #py2
+import encoding
+from encoding import to_native as n
 
 unallowed_in_variable_name = re.compile('[\W]+')
 
+def suppress_context(exc):
+	exc.__context__ = None
+	return exc
+
 class MyDict(dict):
-    	pass
+	pass
 class DictObjectList(list,MutableSequence):
 
 	def insert(self, index, value):
 		obj_value = DictObject.objectify(value)
-		return super().insert(index, obj_value)
+		return super(DictObjectList,self).insert(index, obj_value)
 
 	def __iadd__(self, values):
 		obj_values = DictObject.objectify(values)
-		return super().__iadd__(obj_values)
+		return super(DictObjectList,self).__iadd__(obj_values)
 
 	def extend(self, values):
 		obj_value = DictObject.objectify(values)
-		super().extend(obj_value)
+		super(DictObjectList,self).extend(obj_value)
 
 	def append(self, value):
 		obj_value = DictObject.objectify(value)
-		super().append(obj_value)
+		super(DictObjectList,self).append(obj_value)
 
 	def __setitem__(self, index, value):
 		obj_value = DictObject.objectify(value)
-		return super().__setitem__(index, obj_value)
+		return super(DictObjectList,self).__setitem__(index, obj_value)
 
 
 class DictObject(MyDict):
@@ -206,7 +216,7 @@ class DictObject(MyDict):
 		for a, b in d.items():
 			attribute_name = self.get_attribute_name_by_key(a)
 			self._add_to_object_part(a, b)
-			self._attribute_to_key_map[attribute_name] = a
+			self._attribute_to_key_map[n(attribute_name)] = a
 
 	def __iadd__(self, other):
 		self.merge_dict(other)
@@ -293,7 +303,7 @@ class DictObject(MyDict):
 			attribute_name = "int_" + str(attribute_name)
 			# to access  a = {'1':'foo'}  with DictObject(a).int_1
 			# Note:  a = {'2foo4u':'bar'} will be DictObject(a).int_2foo4u
-		elif not isinstance(key, str):
+		elif not isinstance(key, (str, encoding.native_type, encoding.unicode_type)):
 			attribute_name = "data_" + str(attribute_name)
 			# a[None] = 'foo'  >   a.data_None
 
@@ -352,27 +362,27 @@ class DictObject(MyDict):
 		attribute_name = self.get_attribute_name_by_key(key)
 		unique_attribute_name = attribute_name
 		# check, if there is already a key representing this attribute
-		if attribute_name in self._attribute_to_key_map and self._attribute_to_key_map[attribute_name] != key:
+		if n(attribute_name) in self._attribute_to_key_map and self._attribute_to_key_map[n(attribute_name)] != key:
 			# This attribute is already set, but the key is not.
 			# Now search for the next free one
 			i = 1
 			while i != 0:
 				unique_attribute_name = attribute_name + "_" + str(i)
-				i = i+1 if (unique_attribute_name in self._attribute_to_key_map and
-							self._attribute_to_key_map[unique_attribute_name] != key) else 0
+				i = i+1 if (n(unique_attribute_name) in self._attribute_to_key_map and
+							self._attribute_to_key_map[n(unique_attribute_name)] != key) else 0
 							# if is not free name, continue to increase,
 							# else, if is free, set to 0 to exit loop
 			#end while
-			print("\nCRITICAL WARNING in DictObject: Mapped key '%s' to attribute '%s', because attribute '%s' was already set by key '%s'." % (key, unique_attribute_name, attribute_name, self._attribute_to_key_map[attribute_name]))
+			print("\nCRITICAL WARNING in DictObject: Mapped key '%s' to attribute '%s', because attribute '%s' was already set by key '%s'." % (key, unique_attribute_name, attribute_name, self._attribute_to_key_map[n(attribute_name)]))
 		value = self.on_set(key,value)
 		self._add_to_object_part(key, value)
-		self._attribute_to_key_map[unique_attribute_name] = key
+		self._attribute_to_key_map[n(unique_attribute_name)] = key
 		self.after_set(key,value)
 
 	def __delitem__(self, key):
 		if self.on_del(key):
 			attribute_name = self.get_attribute_name_by_key(key)
-			del self._attribute_to_key_map[attribute_name]
+			del self._attribute_to_key_map[n(attribute_name)]
 			dict.__delitem__(self, key)
 			self.after_del(key)
 
@@ -384,13 +394,13 @@ class DictObject(MyDict):
 			super(DictObject, self).__setattr__(name, value)
 			return
 		else:
-			key_name = self._attribute_to_key_map[name] if name in self._attribute_to_key_map else name  	# if there is a key representing this attribute
+			key_name = self._attribute_to_key_map[n(name)] if n(name) in self._attribute_to_key_map else name  	# if there is a key representing this attribute
 																			# update this key, too
 		value = self.on_set(name, value)
 		self._add_to_object_part(name, value)  	# needed allways to keep items  beeing recursive.
-		self._attribute_to_key_map[name] = key_name 	# needed only on adding new element. (not when updating)
+		self._attribute_to_key_map[n(name)] = key_name 	# needed only on adding new element. (not when updating)
 		# object.__setattr__(self, key, value)
-		dict.__setitem__(self,self._attribute_to_key_map[name], DictObject.objectify(value))  # self[self._key_map[key]] = value
+		dict.__setitem__(self,self._attribute_to_key_map[n(name)], DictObject.objectify(value))  # self[self._key_map[key]] = value
 		self.after_set(name, value)
 
 	def __getattr__(self, name):
@@ -406,32 +416,28 @@ class DictObject(MyDict):
 		"""
 		_exception = None #py2
 		try:
-			value = dict.__getattribute__(self, name)  # Raise exception if not found in original dict's attributes either
+			value = dict.__getattribute__(self, n(name))  # Raise exception if not found in original dict's attributes either
 			return value
 		except AttributeError:
 			try:
-				if name in self.__dict__:
-					return self.__dict__[name]
+				if n(name) in self.__dict__:
+					return self.__dict__[n(name)]
 				if self._attribute_to_key_map:
-					key_name = self._attribute_to_key_map[name]  # Check if we have this set.
+					key_name = self._attribute_to_key_map[n(name)]  # Check if we have this set.
 					self.on_get(key_name)
 					value = dict.__getitem__(self, key_name)  # self[key_name]
 					value = self.after_get(key_name, value)
 					return value
 				else:
-					try:
-						raise AttributeError(name) from None
-					except SyntaxError:
-						pass
+					if not sys.version < '3': # python 2.7
+						raise suppress_context(AttributeError(name))
 					# print("_attribute_to_key_map not defined.")
 					_exception = AttributeError(name)
 					_exception.__cause__ = None
 
 			except KeyError:
-				try:
-					raise AttributeError(name) from None
-				except SyntaxError:
-					pass
+				if not sys.version < '3': # python 2.7
+					raise suppress_context(AttributeError(name))
 				_exception = AttributeError(name)
 				_exception.__cause__ = None
 			finally:
@@ -457,11 +463,11 @@ class DictObject(MyDict):
 		# object.__delattr__(self, item)
 		if name in self.__dict__:
 			del self.__dict__[name]
-		if name in self._attribute_to_key_map:
-			key = self._attribute_to_key_map[name]
+		if n(name) in self._attribute_to_key_map:
+			key = self._attribute_to_key_map[n(name)]
 			if self.on_del(key):
 				dict.__delitem__(self, key)
-				del self._attribute_to_key_map[name]
+				del self._attribute_to_key_map[n(name)]
 			self.after_del(key)
 
 	def __contains__(self, k):
@@ -646,7 +652,22 @@ def ______():
 		>>> m.hua[0].hey
 		'heeey!'
 
+		Python 2 with unicode:
+		>>> from encoding import to_unicode as u
+		>>> h = DictObject(ponies=u('are pretty!'))
+		>>> h.ponies == u('are pretty!')
+		True
+		>>> i = DictObject({u("key"):u("value")})
+		>>> i.key == u("value")
+		True
+		>>> i[u("key")] == u("value")
+		True
+		>>> i["key"] == u("value")
+		True
+		>>> i["key"] == i[u("key")] == i.key
+		True
+
+
 	"""
 	pass
-
 pass
