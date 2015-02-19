@@ -5,8 +5,8 @@ try:
 	from collections.abc import MutableSequence #python 3
 except ImportError:
 	from collections import MutableSequence #py2
-from DictObject import encoding
-from DictObject.encoding import to_native as n
+from . import encoding
+from .encoding import to_native as n
 
 unallowed_in_variable_name = re.compile('[\W]+')
 
@@ -20,23 +20,23 @@ class DictObjectList(list,MutableSequence):
 
 	def insert(self, index, value):
 		obj_value = DictObject.objectify(value)
-		return super(DictObjectList,self).insert(index, obj_value)
+		return super(DictObjectList, self).insert(index, obj_value)
 
 	def __iadd__(self, values):
 		obj_values = DictObject.objectify(values)
-		return super(DictObjectList,self).__iadd__(obj_values)
+		return super(DictObjectList, self).__iadd__(obj_values)
 
 	def extend(self, values):
 		obj_value = DictObject.objectify(values)
-		super(DictObjectList,self).extend(obj_value)
+		super(DictObjectList, self).extend(obj_value)
 
 	def append(self, value):
 		obj_value = DictObject.objectify(value)
-		super(DictObjectList,self).append(obj_value)
+		super(DictObjectList, self).append(obj_value)
 
 	def __setitem__(self, index, value):
 		obj_value = DictObject.objectify(value)
-		return super(DictObjectList,self).__setitem__(index, obj_value)
+		return super(DictObjectList, self).__setitem__(index, obj_value)
 
 
 class DictObject(MyDict):
