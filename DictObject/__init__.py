@@ -217,6 +217,7 @@ class DictObject(MyDict):
 			attribute_name = self.get_attribute_name_by_key(a)
 			self._add_to_object_part(a, b)
 			self._attribute_to_key_map[n(attribute_name)] = a
+		return self
 
 	def __iadd__(self, other):
 		self.merge_dict(other)
