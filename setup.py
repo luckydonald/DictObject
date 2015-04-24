@@ -3,7 +3,8 @@ from codecs import open # To use a consistent encoding
 from os import path
 here = path.abspath(path.dirname(__file__))
 
-long_description = """A Python module that connects to Telegram messenger CLI."""
+long_description = """Python DictObject allows attribute access on dicts.
+"""
 
 setup(
 	name='DictObject',
