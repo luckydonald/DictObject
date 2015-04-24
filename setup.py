@@ -8,7 +8,7 @@ long_description = """Python DictObject allows attribute access on dicts.
 
 setup(
 	name='DictObject',
-	version='0.1.0',
+	version='0.1.1',
 	description='DictObject',
 	long_description=long_description,
 	# The project's main homepage.
