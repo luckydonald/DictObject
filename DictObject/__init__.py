@@ -115,11 +115,11 @@ class DictObject(MyDict):
 		See below (in the merge_dict function)
 		how to merge another dict into a DictObject.
 
-		In order to support dicts added to lists becomeing DictObjects, list type will become the list subclass DictObjectList.
-		It will behave like normal lists, but added values will be objectified.
+		When a list is added to the DictObject, any Dicts inside the list should become DictObjects too.
+		In order to archive that, Lists are transformed to DictObjectList.
+		It will still behave like normal lists, but added values will be automatically objectified.
 
-			Some tests, not ideal as example
-
+			Some tests, not ideal as example:
 			>>> e.test = []
 			>>> e.test.append({"hey":"wow"})
 			>>> e.test
@@ -194,19 +194,29 @@ class DictObject(MyDict):
 		Adding more dict to it.
 
 			>>> first_dict  = {"best pony":'Littlepip'}
-			>>> b = DictObject( first_dict )
-
-		There we got some DunchDict. Let's merge!
-
 			>>> second_dict = {"best fiction":"Fallout: Equestria"}
-			>>> b.merge_dict( second_dict )
+
+		There we got some Dicts. Let's merge!
+
+			>>> a = DictObject( first_dict )
+			>>> a.merge_dict( second_dict ) # doctest: +ELLIPSIS
+			{...}
 
 		but you can go all fancy and use the += operator:
 
-			>>> b += {"4458":"just google it?"}
+			>>> a += {"4458":"just google it?"}
 
 
-			>>> b == {'4458': 'just google it?', 'best fiction':'Fallout: Equestria', 'best pony': 'Littlepip'}
+			>>> a == {'4458': 'just google it?', 'best fiction':'Fallout: Equestria', 'best pony': 'Littlepip'}
+			True
+
+		This will overwrite existing values.
+
+			>>> other_test = DictObject( {"key":"original value"} )
+
+			>>> other_test += {"key":"changed value"}
+
+			>>> other_test["key"] == 'changed value'
 			True
 
 		"""
@@ -228,6 +238,10 @@ class DictObject(MyDict):
 		"""
 		To get a methods name from a key name.
 		Methods only allow a-z, A-Z, _ and after the first charakter 0-9
+		Continue reading below.
+
+			>>> DictObject.get_attribute_name_by_key("test123-456.7")
+			'test123_456_7'
 
 			>>> b = DictObject()
 
@@ -247,7 +261,7 @@ class DictObject(MyDict):
 			'foobar'
 
 		It allows you to use non string values, but they will be prefixed with 'data_', and the rest will be the result
-		 of str(key).
+		of str(key).
 
 			>>> b[False] = 456
 			>>> b[False]
@@ -261,14 +275,14 @@ class DictObject(MyDict):
 			>>> b.data_None
 			1234
 
-		And finally illegal characters will be replaced with underscores, but adding only a singe underscore
-		 between legal characters. (nobody likes to count ______ underscores.)
+		And finally illegal characters will be replaced with underscores, but adding only one singe underscore
+		between legal characters. (nobody likes to count ______ underscores!)
 
 			>>> b += { 'foo-2.4;"':'foo again' }
 			>>> b.foo_2_4_
 			'foo again'
 
-			# that is was should be in b so far:
+			# just a check if everything got added to b so far:
 			>>> b ==  {False: 456, 2: 'heya', None: 1234, '1': 'foo', 'foo-2.4;"': 'foo again', '2abc345': 'foobar'}
 			True
 
