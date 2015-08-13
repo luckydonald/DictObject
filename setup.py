@@ -20,7 +20,7 @@ setup(
 	license='GPLv3+',
 	# See https://pypi.python.org/pypi?%3Aaction=list_classifiers
 	classifiers=[
-	'Development Status :: 3 - Alpha', # 4 - Beta, 5 - Production/Stable
+	'Development Status :: 4 - Beta', #3 - Alpha, 4 - Beta, 5 - Production/Stable
 	# Indicate who your project is intended for
 	'Intended Audience :: Developers',
 	'Topic :: Software Development :: Build Tools',
@@ -40,8 +40,6 @@ setup(
 	'Programming Language :: Python',
 	'Programming Language :: Python :: 3.4',
 	'Programming Language :: Python :: 3',
-	'Topic :: Communications',
-	'Topic :: Communications :: Chat',
 	'Topic :: Software Development :: Libraries'
 	],
 	# What does your project relate to?
