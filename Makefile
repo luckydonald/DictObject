@@ -1,16 +1,22 @@
 all:
+	python setup.py install
+
+prepare:
 	python setup.py sdist
 	python setup.py sdist bdist_wheel --universal
 
-register:
+register-test:
 	python setup.py register -r pypitest
 
-upload:
+upload-test:
 	python setup.py sdist upload -r pypitest
 
 
-register-real:
+register:
 	python setup.py register -r pypi
 
 upload-real:
 	python setup.py register -r pypi
+
+pypi: prepare upload
+

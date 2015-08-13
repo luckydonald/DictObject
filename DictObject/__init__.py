@@ -2,8 +2,6 @@ __author__ = 'luckydonald'
 import re
 import sys
 
-VERSION = '0.1.2'
-
 try:
 	from collections.abc import MutableSequence #python 3
 except ImportError:
