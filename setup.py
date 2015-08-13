@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages # Always prefer setuptools over distutils
-from DictObject import VERSION
 
 long_description = """Python DictObject allows attribute access on dicts.
 Example: ``foo["bar"]`` == ``foo.bar``
