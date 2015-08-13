@@ -15,7 +15,7 @@ upload-test:
 register:
 	python setup.py register -r pypi
 
-upload-real:
+upload:
 	python setup.py register -r pypi
 
 pypi: prepare upload
