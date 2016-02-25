@@ -1,12 +1,13 @@
-__author__ = 'luckydonald'
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
+__author__ = 'luckydonald'
+
 def test():
-	import DictObject
-	import doctest
-	returned = doctest.testmod(DictObject)
-	return returned.failed
+    import DictObject
+    import doctest
+    returned = doctest.testmod(DictObject, verbose=True)
+    return returned.failed
+
 
 if __name__ == '__main__':
-	sys.exit(test())
+    sys.exit(test())
