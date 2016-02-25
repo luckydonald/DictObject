@@ -1,4 +1,6 @@
 # DictObject
+[![<current version>](https://img.shields.io/pypi/v/DictObject.svg) ![<downloads>](https://img.shields.io/pypi/dm/DictObject.svg)](https://pypi.python.org/pypi/DictObject) [![Build Status](https://travis-ci.org/luckydonald/DictObject.svg?branch=master)](https://travis-ci.org/luckydonald/DictObject)
+
 
 `DictObject` is a subclass of `dict` adding attribute-style access.
 ```python
@@ -65,6 +67,11 @@ It will still behave like normal lists, but added values will be automatically o
 This and more is found documentation in the code:    
 [`DictObject/__init__.py`](https://github.com/luckydonald/DictObject/blob/master/DictObject/__init__.py)    
 *(time of writing is [commit c41476e](https://github.com/luckydonald/DictObject/blob/68d8478721de2c8092fa5c407f39a1709c625d1f/DictObject/__init__.py#L45-L156))*
+
+## Install
+```sh
+pip install DictObject
+```
 
 ## Testing
 For testing [doctest](https://docs.python.org/2/library/doctest.html)s where used, the documentation in the code doubles as testing.
