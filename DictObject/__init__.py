@@ -9,8 +9,10 @@ except ImportError:
 
 from luckydonaldUtils import encoding
 from luckydonaldUtils.encoding import to_native as n
+import logging
 
 __author__ = 'luckydonald'
+logger = logging.getLogger(__name__)
 
 unallowed_in_variable_name = re.compile('[\W]+')
 
@@ -397,8 +399,9 @@ class DictObject(MyDict):
             # if is not free name, continue to increase,
             # else, if is free, set to 0 to exit loop
             # end while
-            print(
-                "\nCRITICAL WARNING in DictObject: Mapped key '%s' to attribute '%s', because attribute '%s' was already set by key '%s'." % (
+            logger.warn(
+                "\nCRITICAL WARNING in DictObject: Mapped key '%s' to attribute '%s', "
+                "because attribute '%s' was already set by key '%s'." % (
                     key, unique_attribute_name, attribute_name, self._attribute_to_key_map[n(attribute_name)]))
         value = self.on_set(key, value)
         self._add_to_object_part(key, value)
