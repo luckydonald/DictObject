@@ -65,7 +65,7 @@ class DictObjectList(list, MutableSequence):
     """
 
     def __init__(self, iterable=None):
-        super().__init__(DictObjectList.iterator_objectified(iterable))
+        super(DictObjectList, self).__init__(DictObjectList.iterator_objectified(iterable))
     # end def __init__
 
     @staticmethod
@@ -273,8 +273,8 @@ class DictObject(MyDict):
             <class 'DictObject.DictObject'>
             >>> g == {'tuple': (0, 1, {'dict': 'yeah'}, ['list', 'huuu'])}
             True
-            >>> type(g["tuple"])
-            <class 'tuple'>
+            >>> isinstance(g["tuple"], tuple)
+            True
             >>> type(g.tuple[2])
             <class 'DictObject.DictObject'>
             >>> type(g.tuple[3])
