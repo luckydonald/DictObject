@@ -1,5 +1,5 @@
 # DictObject
-[![<current version>](https://img.shields.io/pypi/v/DictObject.svg) ![<downloads>](https://img.shields.io/pypi/dm/DictObject.svg)](https://pypi.python.org/pypi/DictObject) [![Build Status](https://travis-ci.org/luckydonald/DictObject.svg?branch=master)](https://travis-ci.org/luckydonald/DictObject)
+[![Build Status](https://travis-ci.org/luckydonald/DictObject.svg?branch=master)](https://travis-ci.org/luckydonald/DictObject) [![Coverage Status](https://coveralls.io/repos/github/luckydonald/DictObject/badge.svg?branch=master)](https://coveralls.io/github/luckydonald/DictObject?branch=master) [![<current version>](https://img.shields.io/pypi/v/DictObject.svg) ![<downloads>](https://img.shields.io/pypi/dm/DictObject.svg)](https://pypi.python.org/pypi/DictObject)
 
 
 `DictObject` is a subclass of `dict` adding attribute-style access.
@@ -75,3 +75,4 @@ pip install DictObject
 
 ## Testing
 For testing [doctest](https://docs.python.org/2/library/doctest.html)s where used, the documentation in the code doubles as testing.
+Just run `test.py` or your prefered doctest engine.
