@@ -19,4 +19,5 @@ after_success:
   - 'coverage run test.py'
   - 'coverage report -m'
   - 'coveralls'
+  - 'coverage xml'
   - 'python-codacy-coverage -r coverage.xml'
