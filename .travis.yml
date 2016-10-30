@@ -12,11 +12,10 @@ python:
 install:
   - 'python setup.py install'
 
-script: 'python run test.py'
+script: 'python test.py'
 
 after_success:
-  - 'pip install coverage'
+  - 'pip install coverage codacy-coverage'
   - 'coverage run test.py'
   - 'coverage report -m'
-  - 'pip install codacy-coverage'
   - 'python-codacy-coverage -r coverage.xml'
