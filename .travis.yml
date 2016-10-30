@@ -15,7 +15,8 @@ install:
 script: 'python test.py'
 
 after_success:
-  - 'pip install coverage codacy-coverage'
+  - 'pip install coverage codacy-coverage coveralls'
   - 'coverage run test.py'
   - 'coverage report -m'
+  - 'coveralls'
   - 'python-codacy-coverage -r coverage.xml'
