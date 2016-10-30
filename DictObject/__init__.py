@@ -11,6 +11,7 @@ from luckydonaldUtils import encoding
 from luckydonaldUtils.encoding import to_native as n
 import logging
 
+__all__ = ["DictObject", "DictObjectList"]
 __author__ = 'luckydonald'
 logger = logging.getLogger(__name__)
 
@@ -23,11 +24,103 @@ def suppress_context(exc):
 
 
 class MyDict(dict):
+    """
+    Not sure what this class does. I forgot. Sorry. So now I am using it for setting up doctest.
+
+    # To allow logger output to be checked:
+    >>> logger.warning("Logger Successfully registered.")
+    Logger Successfully registered.
+    """
     pass
 
 
 class DictObjectList(list, MutableSequence):
+    """
+    List which wraps the builtin list, to automatically objectify any dicts in this list.
+
+    Examples:
+    >>> d = {"foo": "bar"}
+    >>> l = ["hi", 1, True, None, d]
+
+    >>> dict_l = DictObjectList(l)
+    >>> dict_l == l
+    True
+    >>> isinstance(dict_l[4], DictObject)
+    True
+
+    >>> dict_l.append(d)
+    >>> isinstance(dict_l[5], DictObject)
+    True
+
+    >>> d2 = {"yeah": "foo"}
+    >>> dict_l.extend([d2, [1,2,3]])
+    >>> isinstance(dict_l[6], DictObject)
+    True
+    >>> isinstance(dict_l[7], DictObjectList)
+    True
+
+
+
+
+    """
+
+    def __init__(self, iterable=None):
+        super().__init__(DictObjectList.iterator_objectified(iterable))
+    # end def __init__
+
+    @staticmethod
+    def iterator_objectified(iterable):
+        """
+        You put in a generator, it will return objectified version of the values.
+
+        Example:
+            >>> input = [0, 1, {"foo": "bar"}, [True, False]]
+            >>> iterator = DictObjectList.iterator_objectified(input)
+            >>> result = [x for x in iterator]
+
+            >>> result
+            [0, 1, {'foo': 'bar'}, [True, False]]
+            >>> type(result[2])
+            <class 'DictObject.DictObject'>
+            >>> type(result[3])
+            <class 'DictObject.DictObjectList'>
+
+            It also accepts DictObject and DictObject itself:
+
+            >>> input = [DictObject(test="successful"), DictObjectList([1, 2, 3])]
+            >>> iterator = DictObjectList.iterator_objectified(input)
+            >>> result = [x for x in iterator]
+
+            >>> result
+            [{'test': 'successful'}, [1, 2, 3]]
+            >>> type(result[0])
+            <class 'DictObject.DictObject'>
+            >>> type(result[1])
+            <class 'DictObject.DictObjectList'>
+
+        :param iterable: something to iterate on
+        :return: a new iterable, you can use instead
+        """
+        for i in iterable:
+            i = DictObject.objectify(i)
+            yield i
+        # end for
+    # end def iterator_objectified
+
     def insert(self, index, value):
+        """
+        Insert object before index.
+
+        Example:
+            >>> l = DictObjectList([1, 2, 3, 4])
+            >>> l.insert(2, "middle")
+            >>> l
+            [1, 2, 'middle', 3, 4]
+
+        :param index: Before which element we want to insert it
+        :param value: The value to insert
+        :return:
+        """
         obj_value = DictObject.objectify(value)
         return super(DictObjectList, self).insert(index, obj_value)
 
@@ -44,6 +137,19 @@ class DictObjectList(list, MutableSequence):
         super(DictObjectList, self).append(obj_value)
 
     def __setitem__(self, index, value):
+        """
+       Set self[key] to value.
+
+       Example:
+           >>> l = DictObjectList([1, 2, 3])
+           >>> l[1] = "middle"
+           >>> l
+           [1, 'middle', 3]
+
+       :param index: Which item to replace
+       :param value: The value to set
+       :return:
+       """
         obj_value = DictObject.objectify(value)
         return super(DictObjectList, self).__setitem__(index, obj_value)
 
@@ -84,7 +190,7 @@ class DictObject(MyDict):
 
         It's possibly to give a set set of keyword arguments.
 
-            >>> b = DictObject(test="foo", hurr="durr", best_pony = "Littlepip")
+            >>> b = DictObject(test="foo", hurr="durr", best_pony="Littlepip")
 
             >>> b == {"test": "foo", "hurr": "durr", "best_pony": "Littlepip"}
             True
@@ -161,6 +267,19 @@ class DictObject(MyDict):
             >>> type(f)
             <class 'DictObject.DictObjectList'>
 
+            >>> g = {"tuple": (0, 1, {"dict": "yeah"}, ["list", "huuu"])}
+            >>> g = DictObject.objectify(g)
+            >>> type(g)
+            <class 'DictObject.DictObject'>
+            >>> g == {'tuple': (0, 1, {'dict': 'yeah'}, ['list', 'huuu'])}
+            True
+            >>> type(g["tuple"])
+            <class 'tuple'>
+            >>> type(g.tuple[2])
+            <class 'DictObject.DictObject'>
+            >>> type(g.tuple[3])
+            <class 'DictObject.DictObjectList'>
+
     """
     _attribute_to_key_map = None  # to resolve the attributes.
 
@@ -182,13 +301,17 @@ class DictObject(MyDict):
 
     @classmethod
     def objectify(cls, obj):
-        if isinstance(obj, DictObject):
+        if isinstance(obj, (DictObject, DictObjectList)):
             return obj
-        if isinstance(obj, list):  # add all list elements
+        elif isinstance(obj, list):  # add all list elements
             return DictObjectList(DictObject.objectify(x) for x in obj)
-        elif isinstance(obj, (list, tuple)):  # add all list elements
-            return type(obj)(DictObject.objectify(x) for x in
-                             obj)  # type(obj)( ... for ... in ..)   is same as   [( ... for ... in ..)]
+        elif isinstance(obj, set):
+            logger.warning("set is currently not supproted. Got converted to a list.")
+            return DictObjectList(list(DictObject.objectify(x) for x in obj))
+        elif isinstance(obj, (tuple)):  # add all list-like elements
+            return type(obj)(DictObject.objectify(x) for x in obj)
+            # this is list(... for ... in ...) or set(... for ... in ...)
+            # type(obj)( ... for ... in ..)   for e.g. list is same as   [( ... for ... in ..)]
         elif isinstance(obj, dict):  # add dict recursivly
             return DictObject(obj)
         else:  # add single element
@@ -228,6 +351,13 @@ class DictObject(MyDict):
 
             >>> other_test["key"] == 'changed value'
             True
+
+        TypeError will be raised, if the given element is not a dict:
+
+            >>> other_test += 1234
+            Traceback (most recent call last):
+                ...
+            TypeError: Argument is no dict.
 
         """
         if not isinstance(d, dict):
@@ -297,7 +427,7 @@ class DictObject(MyDict):
             True
 
         Now it is possible that 2 keys will be stripped to the same attribute string. To keep them accessable
-         they will be numbered. To be more precisely, '_n' will be appended, with 'n' beeing the next free number.
+         they will be numbered. To be more precisely, '_n' will be appended, with 'n' being the next free number.
 
             >>> del b
             >>> b = DictObject()
@@ -305,6 +435,9 @@ class DictObject(MyDict):
             >>> b["1"] = "a"
             >>> b
             {'1': 'a'}
+
+            >>> # To allow logger output to be checked by the tests, you don't need that in your code.
+            >>> import sys; logger.addHandler(logging.StreamHandler(sys.stdout))
 
             >>> b[1] =  "b"
             <BLANKLINE>
@@ -339,16 +472,6 @@ class DictObject(MyDict):
     def _add_to_object_part(self, name, obj):
         dict.__setitem__(self, name, DictObject.objectify(obj))
         return
-        if isinstance(obj, (list, tuple)):  # add all list elements
-            dict.__setitem__(self, name,
-                             DictObjectList(obj))  # type(obj)( ... for ... in ..)   is same as   [( ... for ... in ..)]
-        elif isinstance(obj, (list, tuple)):  # add all list elements
-            dict.__setitem__(self, name, type(obj)(DictObject(x) if isinstance(x, (list, tuple)) else x for x in
-                                                   obj))  # type(obj)( ... for ... in ..)   is same as   [( ... for ... in ..)]
-        elif isinstance(obj, dict):  # add dict recursivly
-            dict.__setitem__(self, name, DictObject(obj))
-        else:  # add single element
-            dict.__setitem__(self, name, obj)
 
     # Items (Array/Dict)
 
@@ -383,7 +506,6 @@ class DictObject(MyDict):
         'changed this.'
         >>> b.barz
         'changed this.'
-
         """
         attribute_name = self.get_attribute_name_by_key(key)
         unique_attribute_name = attribute_name
@@ -409,6 +531,25 @@ class DictObject(MyDict):
         self.after_set(key, value)
 
     def __delitem__(self, key):
+        """
+        Deletes an item by key.
+
+        >>> b = DictObject({"test": "123", "littlepip": 'best pony!', 'something': 'else'})
+        >>> del b["test"]
+        >>> b == {'littlepip': 'best pony!', 'something': 'else'}
+        True
+
+        >>> del b.something
+        >>> b == {'littlepip': 'best pony!'}
+        True
+
+        >>> b.clear()
+        >>> b == {}
+        True
+
+        :param key: The key to delete.
+        :return: Nothing.
+        """
         if self.on_del(key):
             attribute_name = self.get_attribute_name_by_key(key)
             del self._attribute_to_key_map[n(attribute_name)]
@@ -440,6 +581,12 @@ class DictObject(MyDict):
         works as long as _key_map is correct.
 
         >>> b = DictObject({"foo": {"lol": True}, "hello":42, "ponies":'are pretty!'})
+        >>> b.notexist
+        Traceback (most recent call last):
+            ...
+        AttributeError: notexist
+
+        >>> b = DictObject()
         >>> b.notexist
         Traceback (most recent call last):
             ...
@@ -601,9 +748,9 @@ class DictObject(MyDict):
         pass
 
 
-def ______():
+def ______do_more_doctests______():
     """
-    For test suite:
+    For test suite, so we don't spam it in one of the classes.
 
         >>> e = {"a":{"b":{"c":{"d": "foo","e":"bar"}}}, "best pony":"Littlepip", "1":"should be 'int_1' as attribute", "foo-:-bar": "should be 'foo_bar' as attribute."}
         >>> b = DictObject(e)
