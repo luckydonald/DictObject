@@ -2,10 +2,10 @@ import re
 import sys
 
 try:
-    from collections.abc import MutableSequence  # python 3
+    from collections.abc import MutableSequence, MutableSet  # python 3
 
 except ImportError:
-    from collections import MutableSequence  # py2
+    from collections import MutableSequence, MutableSet  # py2
 
 from luckydonaldUtils import encoding
 from luckydonaldUtils.encoding import to_native as n
@@ -23,7 +23,7 @@ def suppress_context(exc):
     return exc
 
 
-class MyDict(dict):
+class SomeDict(dict):
     """
     Not sure what this class does. I forgot. Sorry. So now I am using it for setting up doctest.
 
@@ -32,42 +32,13 @@ class MyDict(dict):
     Logger Successfully registered.
     """
     pass
+# end class
 
 
-class DictObjectList(list, MutableSequence):
+class SelfObjectifyMixin(object):
     """
-    List which wraps the builtin list, to automatically objectify any dicts in this list.
-
-    Examples:
-    >>> d = {"foo": "bar"}
-    >>> l = ["hi", 1, True, None, d]
-
-    >>> dict_l = DictObjectList(l)
-    >>> dict_l == l
-    True
-    >>> isinstance(dict_l[4], DictObject)
-    True
-
-    >>> dict_l.append(d)
-    >>> isinstance(dict_l[5], DictObject)
-    True
-
-    >>> d2 = {"yeah": "foo"}
-    >>> dict_l.extend([d2, [1,2,3]])
-    >>> isinstance(dict_l[6], DictObject)
-    True
-    >>> isinstance(dict_l[7], DictObjectList)
-    True
-
-
-
-
+    To provide the same functionality to both the list and the set implementations
     """
-
-    def __init__(self, iterable=None):
-        super(DictObjectList, self).__init__(DictObjectList.iterator_objectified(iterable))
-    # end def __init__
-
     @staticmethod
     def iterator_objectified(iterable):
         """
@@ -75,7 +46,7 @@ class DictObjectList(list, MutableSequence):
 
         Example:
             >>> input = [0, 1, {"foo": "bar"}, [True, False]]
-            >>> iterator = DictObjectList.iterator_objectified(input)
+            >>> iterator = SelfObjectifyMixin.iterator_objectified(input)
             >>> result = [x for x in iterator]
 
             >>> result
@@ -102,17 +73,48 @@ class DictObjectList(list, MutableSequence):
         :return: a new iterable, you can use instead
         """
         for i in iterable:
-            i = DictObject.objectify(i)
-            yield i
+            yield DictObject.objectify(i)
         # end for
-    # end def iterator_objectified
+    # end def
+# end class
+
+
+class DictObjectList(list, MutableSequence, SelfObjectifyMixin):
+    """
+    List which wraps the builtin list, to automatically objectify any dicts/sets in this list.
+
+    Examples:
+    >>> d = {"foo": "bar"}
+    >>> l = ["hi", 1, True, None, d]
+
+    >>> dict_l = DictObjectList(l)
+    >>> dict_l == l
+    True
+    >>> isinstance(dict_l[4], DictObject)
+    True
+
+    >>> dict_l.append(d)
+    >>> isinstance(dict_l[5], DictObject)
+    True
+
+    >>> d2 = {"yeah": "foo"}
+    >>> dict_l.extend([d2, [1,2,3]])
+    >>> isinstance(dict_l[6], DictObject)
+    True
+    >>> isinstance(dict_l[7], DictObjectList)
+    True
+    """
+
+    def __init__(self, iterable=None):
+        super(DictObjectList, self).__init__(DictObjectList.iterator_objectified(iterable))
+    # end def __init__
 
     def insert(self, index, value):
         """
         Insert object before index.
 
         Example:
-            >>> l = DictObjectList([1, 2, 3, 4])
+            >>> l = DictObjectSet([1, 2, 3, 4])
             >>> l.insert(2, "middle")
             >>> l
             [1, 2, 'middle', 3, 4]
@@ -152,9 +154,40 @@ class DictObjectList(list, MutableSequence):
        """
         obj_value = DictObject.objectify(value)
         return super(DictObjectList, self).__setitem__(index, obj_value)
+    # end def
+# end class
 
 
-class DictObject(MyDict):
+class DictObjectSet(set, MutableSet, SelfObjectifyMixin):
+    """
+    List which wraps the builtin set, to automatically objectify any dicts/lists in this set.
+
+    Examples:
+    >>> s = {"hi", 1, True, None}
+
+    >>> dict_s = DictObjectSet(s)
+    >>> dict_s == s
+    True
+    >>> dict_s.update([False, 1,2,3])
+    >>> dict_s == {False, True, 2, 3, None, 'hi'}
+    True
+    """
+
+    def __init__(self, iterable=None):
+        super(DictObjectSet, self).__init__(DictObjectSet.iterator_objectified(iterable))
+    # end def __init__
+
+    def add(self, element):
+        super().add(DictObject.objectify(element))
+    # end def
+
+    def update(self, *values):
+        super().update(*DictObject.objectify(values))
+    # end def
+# end class
+
+
+class DictObject(SomeDict):
     """
     DictObject is a subclass of dict with attribute-style access.
 
@@ -301,21 +334,71 @@ class DictObject(MyDict):
 
     @classmethod
     def objectify(cls, obj):
-        if isinstance(obj, (DictObject, DictObjectList)):
+        if isinstance(obj, (DictObject, DictObjectList, DictObjectSet)):
             return obj
         elif isinstance(obj, list):  # add all list elements
             return DictObjectList(DictObject.objectify(x) for x in obj)
         elif isinstance(obj, set):
-            logger.warning("set is currently not supproted. Got converted to a list.")
-            return DictObjectList(list(DictObject.objectify(x) for x in obj))
-        elif isinstance(obj, (tuple)):  # add all list-like elements
+            return DictObjectSet(DictObject.objectify(x) for x in obj)
+        elif isinstance(obj, tuple):
             return type(obj)(DictObject.objectify(x) for x in obj)
-            # this is list(... for ... in ...) or set(... for ... in ...)
-            # type(obj)( ... for ... in ..)   for e.g. list is same as   [( ... for ... in ..)]
         elif isinstance(obj, dict):  # add dict recursivly
             return DictObject(obj)
         else:  # add single element
             return obj
+        # end if
+    # end def
+
+    @classmethod
+    def normalify(cls, obj):
+        """
+        Reverses the effect of DictObject.objectify().
+        DictObject becomes a dict again, and DictObjectList becomes a list again.
+
+            >>> i = {'int': 123, 'bool': True, 'null':None, 'string': "test", 'dict':{'waifu': 'littlepip'}, 'list': [1, 2, 3, {'TEST':'SUCCESS'}]}
+            >>> o = DictObject.objectify(i)
+            >>> o == i
+            True
+            >>> d = DictObject.normalify(o)
+            >>> o == d
+            True
+            >>> isinstance(i, dict), isinstance(o, dict), isinstance(d, dict)
+            (True, True, True)
+            >>> isinstance(i, DictObject), isinstance(o, DictObject), isinstance(d, DictObject)
+            (False, True, False)
+            >>> isinstance(i['dict'], dict), isinstance(o['dict'], dict), isinstance(d['dict'], dict)
+            (True, True, True)
+            >>> isinstance(i['dict'], DictObject), isinstance(o['dict'], DictObject), isinstance(d['dict'], DictObject)
+            (False, True, False)
+            >>> isinstance(i['list'], list), isinstance(o['list'], list), isinstance(d['list'], list)
+            (True, True, True)
+            >>> isinstance(i['list'], DictObjectList), isinstance(o['list'], DictObjectList), isinstance(d['list'], DictObjectList)
+            (False, True, False)
+            >>> isinstance(i['list'][3], dict), isinstance(o['list'][3], dict), isinstance(d['list'][3], dict)
+            (True, True, True)
+            >>> isinstance(i['list'][3], DictObject), isinstance(o['list'][3], DictObject), isinstance(d['list'][3], DictObject)
+            (False, True, False)
+
+
+        :param obj:
+        :return:
+        """
+        if isinstance(obj, DictObject):
+            return DictObject.normalify(dict(obj))
+        elif isinstance(obj, DictObjectList):
+            return DictObject.normalify(list(obj))
+        elif isinstance(obj, DictObjectSet):
+            return DictObject.normalify(set(obj))
+        elif isinstance(obj, (list, tuple, set,)):  # add all list-like elements
+            return type(obj)(DictObject.normalify(x) for x in obj)
+            # this is list(... for ... in ...) or set(... for ... in ...)
+            # type(obj)( ... for ... in ..)   for e.g. list is same as   [( ... for ... in ..)]
+        elif isinstance(obj, dict):  # add dict recursivly
+            return {k: DictObject.normalify(v) for k, v in obj.items()}
+        else:  # add single element
+            return obj
+        # end if
+    # end def
 
     def merge_dict(self, d):
         """
