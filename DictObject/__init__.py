@@ -976,10 +976,51 @@ def ______do_pickle_tests______():
     >>> f.seek(0)
     0
     >>> o = pickle.load(f)
+    >>> del f
     >>> o.some_key
     123
     >>> o['some key']
     123
+
+    Now a more complex one:
+
+    >>> d = DictObject.objectify({'a dict': {'a boolean': True, 'a list': [1,2,3,True, ["foo", {"lel": "so many levels"}]]}})
+
+    Check the original stuff first, that must work
+
+    >>> d.a_dict.a_boolean
+    True
+    >>> d['a dict']['a boolean']
+    True
+    >>> d.a_dict.a_list[0]
+    1
+    >>> d['a dict']['a list'][0]
+    1
+    >>> d.a_dict.a_list == [1,2,3,True, ["foo", {"lel": "so many levels"}]]
+    True
+    >>> d['a dict']['a list'] == [1,2,3,True, ["foo", {"lel": "so many levels"}]]
+    True
+    >>> d.a_dict.a_list[4][1].lel
+    'so many levels'
+    >>> d['a dict']['a list'][4][1]['lel']
+    'so many levels'
+
+    >>> f = BytesIO()
+    >>> pickle.dump(d, f)
+    >>> f.seek(0)
+    0
+    >>> o = pickle.load(f)
+    >>> del f
+
+    Hua
+    >>> o.a_dict.a_list == [1,2,3,True, ["foo", {"lel": "so many levels"}]]
+    True
+    >>> o['a dict']['a list'] == [1,2,3,True, ["foo", {"lel": "so many levels"}]]
+    True
+    >>> o.a_dict.a_list[4][1].lel
+    'so many levels'
+    >>> o['a dict']['a list'][4][1]['lel']
+    'so many levels'
 
     :return:
     """
