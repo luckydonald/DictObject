@@ -6,22 +6,21 @@ Example: ``foo["bar"]`` == ``foo.bar``
 
 setup(
     name='DictObject',
-    version='0.1.3',
+    version='1.0.2',
     description='DictObject',
     long_description=long_description.split("\n")[0].strip(),
     # The project's main homepage.
     url='https://github.com/luckydonald/DictObject',
     # Author details
     author='luckydonald',
-    author_email='code@luckydonald.de',
+    author_email='DictObject@luckydonald.de',
     # Choose your license
     license='GPLv3+',
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
-        'Development Status :: 4 - Beta',  # 3 - Alpha, 4 - Beta, 5 - Production/Stable
+        'Development Status :: 5 - Production/Stable',  # 3 - Alpha, 4 - Beta, 5 - Production/Stable
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
-        'Topic :: Software Development :: Build Tools',
         # Pick your license as you wish (should match "license" above)
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Programming Language :: Python :: 3.4',
@@ -42,7 +41,7 @@ setup(
         'Topic :: Software Development :: Libraries'
     ],
     # What does your project relate to?
-    keywords='dict object oo object orientated attribute',
+    keywords='dict object oo object orientated attribute property',
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
     packages=['DictObject'],  # find_packages(exclude=['contrib', 'docs', 'tests*']),
