@@ -6,7 +6,7 @@ Example: ``foo["bar"]`` == ``foo.bar``
 
 setup(
     name='DictObject',
-    version='1.0.2',
+    version='1.0.3',
     description='DictObject',
     long_description=long_description.split("\n")[0].strip(),
     # The project's main homepage.

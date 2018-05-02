@@ -13,6 +13,7 @@ import logging
 
 __all__ = ["DictObject", "DictObjectList"]
 __author__ = 'luckydonald'
+__version__ = '1.0.3'
 logger = logging.getLogger(__name__)
 
 unallowed_in_variable_name = re.compile('[\W]+')
