@@ -179,11 +179,11 @@ class DictObjectSet(set, MutableSet, SelfObjectifyMixin):
     # end def __init__
 
     def add(self, element):
-        super().add(DictObject.objectify(element))
+        super(DictObjectSet, self).add(DictObject.objectify(element))
     # end def
 
     def update(self, *values):
-        super().update(*DictObject.objectify(values))
+        super(DictObjectSet, self).update(*DictObject.objectify(values))
     # end def
 # end class
 
@@ -841,7 +841,7 @@ class DictObject(SomeDict):
         """
         Inherit dict's reduce, which don't work without explicitly calling it
         """  # https://stackoverflow.com/a/46560454/3423324
-        return super().__reduce__()
+        return super(DictObject, self).__reduce__()
     # end def
 
     def __getstate__(self):
@@ -973,8 +973,8 @@ def ______do_pickle_tests______():
     >>> d.some_key
     123
     >>> pickle.dump(d, f)
-    >>> f.seek(0)
-    0
+    >>> f.seek(0) == 0  # rewind. Returns 0L in py2, therefore the equals check.
+    True
     >>> o = pickle.load(f)
     >>> del f
     >>> o.some_key
@@ -1007,8 +1007,8 @@ def ______do_pickle_tests______():
 
     >>> f = BytesIO()
     >>> pickle.dump(d, f)
-    >>> f.seek(0)
-    0
+    >>> f.seek(0) == 0  # rewind. Returns 0L in py2, therefore the equals check.
+    True
     >>> o = pickle.load(f)
     >>> del f
 
