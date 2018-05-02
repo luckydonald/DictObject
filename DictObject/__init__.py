@@ -115,7 +115,7 @@ class DictObjectList(list, MutableSequence, SelfObjectifyMixin):
         Insert object before index.
 
         Example:
-            >>> l = DictObjectSet([1, 2, 3, 4])
+            >>> l = DictObjectList([1, 2, 3, 4])
             >>> l.insert(2, "middle")
             >>> l
             [1, 2, 'middle', 3, 4]
@@ -837,6 +837,27 @@ class DictObject(SomeDict):
         """
         pass
 
+    def __reduce__(self):
+        """
+        Inherit dict's reduce, which don't work without explicitly calling it
+        """  # https://stackoverflow.com/a/46560454/3423324
+        return super().__reduce__()
+    # end def
+
+    def __getstate__(self):
+        return self.__dict__
+    # end def
+
+    def __setstate__(self, d):
+        #print(repr(d))
+        # {'_attribute_to_key_map': {'some_key': 'some key'}}
+        if isinstance(d, dict) and '_attribute_to_key_map' in d:
+            self.__setattr__('_attribute_to_key_map', d['_attribute_to_key_map'])
+            del d['_attribute_to_key_map']
+        # end if
+        self.__dict__.update(d)
+    # end def
+
 
 def ______do_more_doctests______():
     """
@@ -940,5 +961,28 @@ def ______do_more_doctests______():
     """
     pass
 
+def ______do_pickle_tests______():
+    """
+    >>> # from DictObject import DictObject
+    >>> import pickle; from io import BytesIO;f = BytesIO()
+    >>> d = DictObject.objectify({"some key": 123})
+    >>> d == {"some key": 123}
+    True
+    >>> d['some key']
+    123
+    >>> d.some_key
+    123
+    >>> pickle.dump(d, f)
+    >>> f.seek(0)
+    0
+    >>> o = pickle.load(f)
+    >>> o.some_key
+    123
+    >>> o['some key']
+    123
+
+    :return:
+    """
+    pass
 
 pass
