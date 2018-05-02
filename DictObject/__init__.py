@@ -314,19 +314,25 @@ class DictObject(SomeDict):
             <class 'DictObject.DictObjectList'>
 
     """
-    _attribute_to_key_map = None  # to resolve the attributes.
 
-    # key is the attribute name,
-    # value the full, original name used as original key.
-    # Examples:
-    # "int_1"    > "1"
-    # "foo_2_4_" > "foo-: '2.4;"
     def __init__(self, *args, **kwargs):
         if len(args) == 1:
             dict.__init__(self, *args, **kwargs)
         else:
             dict.__init__(self, **kwargs)
+        # end if
         self._attribute_to_key_map = {}  # else they will be still here if i instanciate a new one.
+        """ 
+        Resolves the attributes (properties) of this class instance to the original dict's attributes.
+        So `dict.foo_2_4_` can be resolved as `dict["foo-: '.4;"]`.
+        
+        The key is the attribute name,
+        the value is the full, original name used as original key.
+        Examples:
+            "int_1"    > "1"
+            "foo_2_4_" > "foo-: '2.4;"
+        """
+        # process kwarg elements als key=value for this dict.
         kwargs_dict = dict(**kwargs)
         for arg in args:
             self.merge_dict(arg)
