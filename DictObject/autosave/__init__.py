@@ -1,10 +1,10 @@
 try:
     from .. import DictObject
-except ImportError:
+except (ImportError, ValueError):
     from DictObject import DictObject, DictObjectList
+    from luckydonaldUtils.encoding import to_native as n
 # end try
 import os
-import sys
 import json
 import logging
 
@@ -19,11 +19,11 @@ class AutosaveDictObject(DictObject):
 
             >>> with open("./test.json", "w") as file:
             ... 	json.dump({'foo': 'bar', 'numbers': [1, 2, 3], 'hurr': 'durr', 'boolean': True, 'dev-null': 0}, file)
-            >>> a = AutosaveDictObject()
-            Traceback (most recent call last):
-                ...
-                a = AutosaveDict()
-            TypeError: __init__() missing 1 required positional argument: 'file'
+            >>> try:
+            ...     a = AutosaveDictObject()
+            ...     raise AssertionError('should throw a TypeError...')
+            ... except TypeError:
+            ...     pass
 
             >>> a = AutosaveDictObject("./test.json")
             >>> a.foor
@@ -33,34 +33,34 @@ class AutosaveDictObject(DictObject):
             >>> a = AutosaveDictObject("./test.json")
             >>> a == {'foo': 'bar', 'numbers': [1, 2, 3], 'hurr': 'durr', 'boolean': True, 'dev-null': 0}
             True
-            >>> a["foo"]
+            >>> n(a["foo"])
             'bar'
-            >>> a.foo
+            >>> n(a.foo)
             'bar'
             >>> a.foo = "hey"
             >>> a.foo
             'hey'
             >>> b = AutosaveDictObject("./test.json")
-            >>> b.foo
+            >>> n(b.foo)
             'hey'
-            >>> b["foo"]
+            >>> n(b["foo"])
             'hey'
             >>> b.enable_autosave(False)
             >>> b["foo"] = "hurr"
             >>> b.foo
             'hurr'
             >>> c = AutosaveDictObject("./test.json")
-            >>> c.foo
+            >>> n(c.foo)
             'hey'
             >>> b.store_database()
             >>> c.load_database()
-            >>> c.foo
+            >>> n(c.foo)
             'hurr'
             >>> c.numbers == [1, 2, 3]
             True
             >>> c.foo = "I am from .json!"
             >>> d = AutosaveDictObject("./test.json", defaults={'foo': 'changed', 'default': 'this is not in the .json file.', 'numbers':'different type example', 'test':{'more':'stuff'}})
-            >>> d.foo
+            >>> n(d.foo)
             'I am from .json!'
             >>> d.default
             'this is not in the .json file.'
@@ -68,8 +68,7 @@ class AutosaveDictObject(DictObject):
             True
             >>> d.test
             {'more': 'stuff'}
-            >>> d.merge_dict({'foo':'should be overwriten by this.'})
-            {'foo': 'should be overwriten by this.', 'default': 'this is not in the .json file.', 'numbers': [1, 2, 3], 'test': {'more': 'stuff'}, 'boolean': True, 'dev-null': 0, 'hurr': 'durr'}
+            >>> _ = d.merge_dict({'foo':'should be overwriten by this.'})
             >>> d.foo
             'should be overwriten by this.'
 
