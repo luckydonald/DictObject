@@ -1,0 +1,11 @@
+{
+    "boolean": true,
+    "dev-null": 0,
+    "foo": "I am from .json!",
+    "hurr": "durr",
+    "numbers": [
+        1,
+        2,
+        3
+    ]
+}
