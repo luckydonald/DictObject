@@ -1,4 +1,8 @@
-from .. import DictObject
+try:
+    from .. import DictObject
+except ImportError:
+    from DictObject import DictObject, DictObjectList
+# end try
 import os
 import sys
 import json
@@ -55,7 +59,7 @@ class AutosaveDictObject(DictObject):
             >>> c.numbers == [1, 2, 3]
             True
             >>> c.foo = "I am from .json!"
-            >>> d = AutosaveDictObject("./test.json", {'foo': 'changed', 'default': 'this is not in the .json file.', 'numbers':'different type example', 'test':{'more':'stuff'}})
+            >>> d = AutosaveDictObject("./test.json", defaults={'foo': 'changed', 'default': 'this is not in the .json file.', 'numbers':'different type example', 'test':{'more':'stuff'}})
             >>> d.foo
             'I am from .json!'
             >>> d.default
@@ -65,64 +69,36 @@ class AutosaveDictObject(DictObject):
             >>> d.test
             {'more': 'stuff'}
             >>> d.merge_dict({'foo':'should be overwriten by this.'})
+            {'foo': 'should be overwriten by this.', 'default': 'this is not in the .json file.', 'numbers': [1, 2, 3], 'test': {'more': 'stuff'}, 'boolean': True, 'dev-null': 0, 'hurr': 'durr'}
             >>> d.foo
             'should be overwriten by this.'
 
             Create new file test.
             >>> b = AutosaveDictObject("./test2.json", load_now=False)
-            >>> from luckydonaldUtils.files.tree import tree
-            >>> listOfFiles = list()
-            ... for (dirpath, dirnames, filenames) in os.walk('.'):
-            ...    listOfFiles += [os.path.join(dirpath, file) for file in filenames]
-            ... for elem in listOfFiles:
-            ...     print(elem)
-
+            >>> b
+            {}
             >>> import os
+            >>> os.path.exists("./test2.json")   # not yet created
+            False
+            >>> b.test = 'something to trigger writing to disk'
+            >>> os.path.exists("./test2.json")   # not yet created
+            True
             >>> os.remove("./test2.json")
 
 
     """
-    if sys.version < '3':  # python 2.7
-        def __init__(self, file, *args, **kwargs):
-            """
-            Initializes the object.
+    def __init__(self, file, autosafe=True, path=None, load_now=True, defaults=None, *args, **kwargs):
+        """
+        Initializes the object.
 
-            :param file:  Filename to use.
-            :param autosafe: If it should automatically write to disk after values being changed. Default: True
-            :param path: The path of the folder where the file is in. Default: None
-            :param load_now: If it should load the data from said fail upon creation. Default: True
-            :param defaults: Some default dictionary values it should be initialized with. Note that overwrites **kwargs, but not the stuff loaded from file. Default: None
-            """
-            autosafe = True
-            path = None
-            load_now = True
-            defaults = None
-            if 'autosafe' in kwargs:
-                autosafe = kwargs.pop('autosafe')
-            # end if
-            if 'path' in kwargs:
-                path = kwargs.pop('path')
-            # end if
-            if 'load_now' in kwargs:
-                load_now = kwargs.pop('load_now')
-            # end if
-            if 'defaults' in kwargs:
-                defaults = kwargs.pop('defaults')
-            # end if
-            self.__init_constructor__(autosafe, defaults, file, load_now, path, args, kwargs)
-    else:  # python 3
-        def __init__(self, file, autosafe=True, path=None, load_now=True, defaults=None, *args, **kwargs):
-            """
-            Initializes the object.
-
-            :param file:  Filename to use.
-            :param autosafe: If it should automatically write to disk after values being changed. Default: True
-            :param path: The path of the folder where the file is in. Default: None
-            :param load_now: If it should load the data from said fail upon creation. Default: True
-            :param defaults: Some default dictionary values it should be initialized with. Note that overwrites **kwargs, but not the stuff loaded from file. Default: None
-            """
-            self.__init_constructor__(autosafe, defaults, file, load_now, path, args, kwargs)
-        # end def
+        :param file:  Filename to use.
+        :param autosafe: If it should automatically write to disk after values being changed. Default: True
+        :param path: The path of the folder where the file is in. Default: None
+        :param load_now: If it should load the data from said fail upon creation. Default: True
+        :param defaults: Some default dictionary values it should be initialized with. Note that overwrites **kwargs, but not the stuff loaded from file. Default: None
+        """
+        self.__init_constructor__(autosafe, defaults, file, load_now, path, args, kwargs)
+    # end def
     # end if
 
     def __init_constructor__(self, autosafe, defaults, file, load_now, path, args, kwargs):
