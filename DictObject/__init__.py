@@ -52,10 +52,10 @@ class SelfObjectifyMixin(object):
 
             >>> result
             [0, 1, {'foo': 'bar'}, [True, False]]
-            >>> type(result[2])
-            <class 'DictObject.DictObject'>
-            >>> type(result[3])
-            <class 'DictObject.DictObjectList'>
+            >>> isinstance(result[2], DictObject)
+            True
+            >>> isinstance(result[3], DictObjectList)
+            True
 
             It also accepts DictObject and DictObject itself:
 
@@ -65,10 +65,10 @@ class SelfObjectifyMixin(object):
 
             >>> result
             [{'test': 'successful'}, [1, 2, 3]]
-            >>> type(result[0])
-            <class 'DictObject.DictObject'>
-            >>> type(result[1])
-            <class 'DictObject.DictObjectList'>
+            >>> isinstance(result[0], DictObject)
+            True
+            >>> isinstance(result[1], DictObjectList)
+            True
 
         :param iterable: something to iterate on
         :return: a new iterable, you can use instead
@@ -272,14 +272,16 @@ class DictObject(SomeDict):
             >>> e.test.append({"hey":"wow"})
             >>> e.test
             [{'hey': 'wow'}]
-            >>> type( e.test )
-            <class 'DictObject.DictObjectList'>
+            >>> isinstance(e, DictObject)
+            True
+            >>> isinstance(e.test, DictObjectList)
+            True
             >>> e.test[0]
             {'hey': 'wow'}
             >>> e.test[0]["hey"]
             'wow'
-            >>> type( e.test[0] )
-            <class 'DictObject.DictObject'>
+            >>> isinstance(e.test[0], DictObject)
+            True
             >>> e.test[0].hey
             'wow'
             >>> e.test.append({"huh":"wow"})
@@ -288,31 +290,31 @@ class DictObject(SomeDict):
             >>> e.test += [{'third': 'wow'}]
             >>> e.test[2]
             {'third': 'wow'}
-            >>> type(e.test[2])
-            <class 'DictObject.DictObject'>
+            >>> isinstance(e.test[2], DictObject)
+            True
             >>> e.test.extend([{'fourth': 'wow'}])
             >>> e.test == [{'hey': 'wow'}, {'huh': 'wow'}, {'third': 'wow'}, {'fourth': 'wow'}]
             True
-            >>> type(e.test[3])
-            <class 'DictObject.DictObject'>
+            >>> isinstance(e.test[3], DictObject)
+            True
             >>> f = DictObject.objectify(["a",])
             >>> f
             ['a']
-            >>> type(f)
-            <class 'DictObject.DictObjectList'>
+            >>> isinstance(f, DictObjectList)
+            True
 
             >>> g = {"tuple": (0, 1, {"dict": "yeah"}, ["list", "huuu"])}
             >>> g = DictObject.objectify(g)
-            >>> type(g)
-            <class 'DictObject.DictObject'>
+            >>> isinstance(g, DictObject)
+            True
             >>> g == {'tuple': (0, 1, {'dict': 'yeah'}, ['list', 'huuu'])}
             True
             >>> isinstance(g["tuple"], tuple)
             True
-            >>> type(g.tuple[2])
-            <class 'DictObject.DictObject'>
-            >>> type(g.tuple[3])
-            <class 'DictObject.DictObjectList'>
+            >>> isinstance(g.tuple[2], DictObject)
+            True
+            >>> isinstance(g.tuple[3], DictObjectList)
+            True
 
     """
 

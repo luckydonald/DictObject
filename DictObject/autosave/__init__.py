@@ -1,6 +1,7 @@
-from DictObject import DictObject
-import json
+from .. import DictObject
 import os
+import sys
+import json
 import logging
 
 __author__ = 'luckydonald'
@@ -68,14 +69,63 @@ class AutosaveDictObject(DictObject):
             'should be overwriten by this.'
 
             Create new file test.
-            >>> b = AutosaveDictObject("./test2.json")
+            >>> b = AutosaveDictObject("./test2.json", load_now=False)
+            >>> from luckydonaldUtils.files.tree import tree
+            >>> listOfFiles = list()
+            ... for (dirpath, dirnames, filenames) in os.walk('.'):
+            ...    listOfFiles += [os.path.join(dirpath, file) for file in filenames]
+            ... for elem in listOfFiles:
+            ...     print(elem)
+
             >>> import os
             >>> os.remove("./test2.json")
 
 
     """
+    if sys.version < '3':  # python 2.7
+        def __init__(self, file, *args, **kwargs):
+            """
+            Initializes the object.
 
-    def __init__(self, file, *args, autosafe=True, path=None, load_now=True, defaults=None, **kwargs):
+            :param file:  Filename to use.
+            :param autosafe: If it should automatically write to disk after values being changed. Default: True
+            :param path: The path of the folder where the file is in. Default: None
+            :param load_now: If it should load the data from said fail upon creation. Default: True
+            :param defaults: Some default dictionary values it should be initialized with. Note that overwrites **kwargs, but not the stuff loaded from file. Default: None
+            """
+            autosafe = True
+            path = None
+            load_now = True
+            defaults = None
+            if 'autosafe' in kwargs:
+                autosafe = kwargs.pop('autosafe')
+            # end if
+            if 'path' in kwargs:
+                path = kwargs.pop('path')
+            # end if
+            if 'load_now' in kwargs:
+                load_now = kwargs.pop('load_now')
+            # end if
+            if 'defaults' in kwargs:
+                defaults = kwargs.pop('defaults')
+            # end if
+            self.__init_constructor__(autosafe, defaults, file, load_now, path, args, kwargs)
+    else:  # python 3
+        def __init__(self, file, autosafe=True, path=None, load_now=True, defaults=None, *args, **kwargs):
+            """
+            Initializes the object.
+
+            :param file:  Filename to use.
+            :param autosafe: If it should automatically write to disk after values being changed. Default: True
+            :param path: The path of the folder where the file is in. Default: None
+            :param load_now: If it should load the data from said fail upon creation. Default: True
+            :param defaults: Some default dictionary values it should be initialized with. Note that overwrites **kwargs, but not the stuff loaded from file. Default: None
+            """
+            self.__init_constructor__(autosafe, defaults, file, load_now, path, args, kwargs)
+        # end def
+    # end if
+
+    def __init_constructor__(self, autosafe, defaults, file, load_now, path, args, kwargs):
         if path:
             file = os.path.join(path, file)
         super(AutosaveDictObject, self).__init__(*args, **kwargs)
@@ -89,6 +139,12 @@ class AutosaveDictObject(DictObject):
         if load_now:
             try:
                 self.load_database(merge=True)
+            except IOError as e:
+                import errno
+                if e.errno == errno.ENOENT:
+                    logger.warn("File {file!r} could not be found! Not loading any data! Error {e}".format(file=self._database_file, e=e))
+                    return
+                # end if
             except (ValueError, TypeError, Exception):
                 raise
 
@@ -133,13 +189,9 @@ class AutosaveDictObject(DictObject):
 
     def load_database(self, merge=False):
         logger.debug("Loading database from {file}.".format(file=self._database_file))
-        try:
-            with open(self._database_file, "r") as file:
-                json_data = file.read()
-        except IOError as e:
-            logger.warn("File {file!r} could not be loaded! Error {e}".format(file=self._database_file, e=e))
-            raise
-        # end def
+        with open(self._database_file, "r") as file:
+            json_data = file.read()
+        # end with
         data = self._str_to_json(json_data)
         if not merge:
             logging.debug("Not merging.")
